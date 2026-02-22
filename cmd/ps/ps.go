@@ -20,7 +20,7 @@ var PsCmd = &cobra.Command{
 func init() {
 	PsCmd.AddCommand(createCredentialCmd())
 	PsCmd.AddCommand(getCredentialCmd())
-	PsCmd.AddCommand(reInitCredentialCmd())
+	PsCmd.AddCommand(initCredentialCmd())
 	PsCmd.AddCommand(loginCmd())
 }
 
@@ -104,13 +104,13 @@ func getCredentialCmd() *cobra.Command {
 	return cmd
 }
 
-type ReInitPsCredentialOptions struct {
+type initPsCredentialOptions struct {
 	Path        string
 	SandboxPath string
 }
 
-func reInitCredentialCmd() *cobra.Command {
-	opts := &ReInitPsCredentialOptions{}
+func initCredentialCmd() *cobra.Command {
+	opts := &initPsCredentialOptions{}
 
 	cmd := &cobra.Command{
 		Use:   string(models.PsInitCredential),
