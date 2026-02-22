@@ -5,5 +5,4 @@ type CloudProvider string
 const (
 	AWS   CloudProvider = "AWS"
 	Azure CloudProvider = "Azure"
-	GCP   CloudProvider = "GCP"
 )
