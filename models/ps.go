@@ -2,6 +2,22 @@ package models
 
 import "time"
 
+type CredentialScope string
+
+const (
+	ScopeFull      CredentialScope = "full"
+	ScopeTerraform CredentialScope = "terraform"
+)
+
+func ParseCredentialScope(s string) CredentialScope {
+	switch s {
+	case "terraform":
+		return ScopeTerraform
+	default:
+		return ScopeFull
+	}
+}
+
 type SandboxCredential interface {
 	Provider() string
 	IsExpired() bool
