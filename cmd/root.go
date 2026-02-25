@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bear_cli/cmd/ado"
 	"bear_cli/cmd/ps"
 	"log"
 
@@ -16,6 +17,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(GetVersionCmd())
 	rootCmd.AddCommand(ps.PsCmd)
+	rootCmd.AddCommand(ado.AdoCmd)
 }
 
 func Execute() {
