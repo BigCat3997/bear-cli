@@ -1,13 +1,15 @@
 package prompt
 
 import (
-	"bear_cli/models"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"strings"
+
+	"bear_cli/internal/cli"
 )
 
 func padRight(s string, n int) string {
@@ -83,6 +85,7 @@ func PrintTable(data any, hiddenFields ...string) {
 			cols = append(cols, c)
 		}
 	}
+	sort.Strings(cols)
 
 	// Compute widths
 	width := make(map[string]int)
@@ -143,19 +146,26 @@ func PrintLinuxEnvVar(data any, hiddenFields ...string) error {
 	if !ok {
 		return fmt.Errorf("expected map[string]string")
 	}
-	for k, v := range dataMap {
+	keys := make([]string, 0, len(dataMap))
+	for key := range dataMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := dataMap[k]
 		fmt.Printf("export %s=%q\n", k, v)
 	}
 	return nil
 }
 
-func PrintStdOut(data any, stdOutFormat models.StdOutFormat, hiddenFields ...string) {
+func PrintStdOut(data any, stdOutFormat cli.StdOutFormat, hiddenFields ...string) {
 	switch stdOutFormat {
-	case models.TABLE:
+	case cli.TABLE:
 		PrintTable(data, hiddenFields...)
-	case models.JSON:
+	case cli.JSON:
 		PrintJSONText(data, hiddenFields...)
-	case models.LINUX_ENV_VAR:
+	case cli.LINUX_ENV_VAR:
 		PrintLinuxEnvVar(data, hiddenFields...)
 	default:
 		break
