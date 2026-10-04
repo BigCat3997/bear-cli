@@ -3,9 +3,12 @@ package browser
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"golang.org/x/term"
 )
 
 type Website string
@@ -69,29 +72,92 @@ func clickIfExistsJS(query string) chromedp.ActionFunc {
 	}
 }
 
-func LoginInBrowser(username, password string, website Website, url string) {
-	allocCtx, _ := chromedp.NewExecAllocator(context.Background(),
+func LoginInBrowser(username, password string, website Website, url string) error {
+	session, err := startLoginInBrowser(username, password, website, url)
+	if err != nil {
+		return err
+	}
+	defer session.close()
+
+	fmt.Println("Browser is open. You may continue interacting manually.")
+	interactive := term.IsTerminal(int(os.Stdin.Fd()))
+	if interactive {
+		fmt.Println("Press ENTER or close the browser to finish.")
+	}
+	waitForBrowser(session.done, interactive, os.Stdin)
+	return nil
+}
+
+// StartLoginInBrowser opens an interactive browser session and returns a
+// function that closes it. Callers should retain the returned function for as
+// long as the browser must remain open.
+func StartLoginInBrowser(username, password string, website Website, url string) (func(), error) {
+	session, err := startLoginInBrowser(username, password, website, url)
+	if err != nil {
+		return nil, err
+	}
+	return session.close, nil
+}
+
+type loginBrowserSession struct {
+	close func()
+	done  <-chan struct{}
+}
+
+func startLoginInBrowser(username, password string, website Website, url string) (loginBrowserSession, error) {
+	allocCtx, cancelAllocator := chromedp.NewExecAllocator(context.Background(),
 		append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.Flag("headless", false),
-			chromedp.Flag("incognito", true),
-		)...)
+			chromedp.Flag("incognito", true))...)
 
-	ctx, _ := chromedp.NewContext(allocCtx)
+	ctx, cancelBrowser := chromedp.NewContext(allocCtx)
+	closeBrowser := func() {
+		cancelBrowser()
+		cancelAllocator()
+	}
 
 	switch website {
 	case AWSConsole:
 		if err := chromedp.Run(ctx, loginAWSConsole(url, username, password)); err != nil {
-			fmt.Println("Error:", err)
+			closeBrowser()
+			return loginBrowserSession{}, err
 		}
 	case AzurePortal:
 		if err := chromedp.Run(ctx, loginAzurePortal(username, password)); err != nil {
-			fmt.Println("Error:", err)
+			closeBrowser()
+			return loginBrowserSession{}, err
 		}
+	default:
+		closeBrowser()
+		return loginBrowserSession{}, fmt.Errorf("unsupported login website %q", website)
 	}
 
-	fmt.Println("Browser is open. You may continue interacting manually.")
-	fmt.Println("Press ENTER to terminate Go process (browser will close).")
+	chromedpContext := chromedp.FromContext(ctx)
+	if chromedpContext == nil || chromedpContext.Browser == nil {
+		closeBrowser()
+		return loginBrowserSession{}, fmt.Errorf("browser session did not start")
+	}
 
-	// Keep program alive until user decides
-	fmt.Scanln()
+	return loginBrowserSession{
+		close: closeBrowser,
+		done:  chromedpContext.Browser.LostConnection,
+	}, nil
+}
+
+func waitForBrowser(done <-chan struct{}, interactive bool, input io.Reader) {
+	if !interactive {
+		<-done
+		return
+	}
+
+	enter := make(chan struct{})
+	go func() {
+		_, _ = fmt.Fscanln(input)
+		close(enter)
+	}()
+
+	select {
+	case <-done:
+	case <-enter:
+	}
 }
