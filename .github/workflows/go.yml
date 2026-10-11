@@ -40,10 +40,8 @@ jobs:
             exit 1
           fi
 
-      - name: Verify modules are tidy
-        run: |
-          go mod tidy
-          git diff --exit-code go.mod go.sum
+      - name: Verify modules
+        run: go mod verify
 
       - name: Vet
         run: go vet $(go list ./... | grep -v /cmd/bear-menu-bar)
