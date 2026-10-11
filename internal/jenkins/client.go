@@ -295,9 +295,6 @@ func (c *Client) CreateSecretTextCredentials(ctx context.Context, values map[str
 	}
 
 	prefix := slug(options.IDPrefix)
-	if prefix == "" {
-		prefix = "bear"
-	}
 
 	keys := make([]string, 0, len(values))
 	for key := range values {
@@ -307,7 +304,10 @@ func (c *Client) CreateSecretTextCredentials(ctx context.Context, values map[str
 
 	created := make([]CreatedCredential, 0, len(keys))
 	for _, key := range keys {
-		credentialID := prefix + "-" + slug(key)
+		credentialID := slug(key)
+		if prefix != "" {
+			credentialID = prefix + "-" + credentialID
+		}
 		description := strings.TrimSpace(options.Description)
 		if description == "" {
 			description = "Bear-managed credential for " + key
