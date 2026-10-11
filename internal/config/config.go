@@ -49,6 +49,10 @@ type JenkinsConfig struct {
 	URL      string `toml:"jenkins_url"`
 	UserID   string `toml:"jenkins_user_id"`
 	APIToken string `toml:"jenkins_api_token"`
+
+	// Directory holds jenkins.war and is used by the menu bar app. It may start
+	// with ~/.
+	Directory string `toml:"jenkins_directory"`
 }
 
 // AWSConfig configures AWS-related menu actions.
