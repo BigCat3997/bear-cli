@@ -141,9 +141,6 @@ func prepareAndValidateCreateCredentialOptions(opts *PsCreateCredentialOptions, 
 		if opts.JenkinsScope != "GLOBAL" && opts.JenkinsScope != "SYSTEM" {
 			return fmt.Errorf("invalid --jenkins-credential-scope %q: expected GLOBAL or SYSTEM", opts.JenkinsScope)
 		}
-		if opts.JenkinsPrefix == "" {
-			opts.JenkinsPrefix = "ps-" + opts.CloudProvider
-		}
 	}
 
 	if opts.FilePath != "" {
@@ -283,7 +280,7 @@ func createCredentialCmd(jenkinsConfig config.JenkinsConfig) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				fmt.Fprintf(cmd.ErrOrStderr(), "Published %d Jenkins %s credentials with prefix %q\n", len(created), opts.JenkinsScope, opts.JenkinsPrefix)
+				fmt.Fprintf(cmd.ErrOrStderr(), "Published %d Jenkins %s credentials\n", len(created), opts.JenkinsScope)
 			}
 
 			if opts.Login {
@@ -309,7 +306,7 @@ func createCredentialCmd(jenkinsConfig config.JenkinsConfig) *cobra.Command {
 	cmd.Flags().StringVar(&opts.JenkinsUser, "jenkins-user", "", "Jenkins username (default: BEAR_JENKINS_USER_ID, then config)")
 	cmd.Flags().StringVar(&opts.JenkinsAPIToken, "jenkins-api-token", "", "Jenkins API token (prefer BEAR_JENKINS_API_TOKEN)")
 	cmd.Flags().StringVar(&opts.JenkinsScope, "jenkins-credential-scope", "GLOBAL", "Jenkins credential scope: GLOBAL or SYSTEM")
-	cmd.Flags().StringVar(&opts.JenkinsPrefix, "jenkins-credential-prefix", "", "Credential ID prefix (default: ps-<cloud-provider>)")
+	cmd.Flags().StringVar(&opts.JenkinsPrefix, "jenkins-credential-prefix", "", "Optional credential ID prefix (default: none, e.g. aws-access-key-id)")
 	cmd.Flags().BoolVar(&opts.Override, "override", false, "Replace matching variables or Jenkins credential IDs when they already exist")
 
 	// Deprecated compatibility flags. New commands should use --publish-to-ado.
